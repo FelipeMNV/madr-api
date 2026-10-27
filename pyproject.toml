@@ -30,7 +30,7 @@ preview = true
 quote-style = 'single'
 
 [tool.taskipy.tasks]
-run = 'fastapi dev madr_api\src\app.py'
+run = 'fastapi dev src/madr_api/app.py'
 
 pre_test = 'task lint'
 test = 'pytest -s -x --cov=madr_api -vv'
