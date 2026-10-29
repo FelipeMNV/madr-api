@@ -1,18 +1,19 @@
 from http import HTTPStatus
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from madr_api.database import get_session
 from madr_api.models import User
-from madr_api.schemas import AccountCreate, AccountPublic
-from madr_api.security import get_password_hash
+from madr_api.schemas import AccountCreate, AccountPublic, FilterPage, UserList
+from madr_api.security import get_current_user, get_password_hash
 
 router = APIRouter(prefix='/users', tags=['users'])
 T_Session = Annotated[AsyncSession, Depends(get_session)]
+CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
 @router.post('/', status_code=HTTPStatus.CREATED, response_model=AccountPublic)
@@ -53,3 +54,15 @@ async def create_user(user: AccountCreate, session: T_Session):
     await session.refresh(db_user)
 
     return db_user
+
+
+@router.get('/', response_model=UserList)
+async def read_users(
+    session: T_Session,
+    current_user: CurrentUser,
+    filter_users: Annotated[FilterPage, Query()],
+):
+    users = await session.scalars(
+        select(User).limit(filter_users.limit).offset(filter_users.offset)
+    )
+    return {'users': users.all()}
