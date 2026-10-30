@@ -13,7 +13,7 @@ from testcontainers.postgres import PostgresContainer
 
 from madr_api.app import app
 from madr_api.database import get_session
-from madr_api.models import User, table_registry
+from madr_api.models import Romancista, User, table_registry
 from madr_api.security import get_password_hash
 
 if sys.platform == 'win32':
@@ -88,6 +88,17 @@ def token(client, user):
     )
 
     return response.json()['access_token']
+
+
+@pytest_asyncio.fixture
+async def romancista(session: AsyncSession):
+    db_romancista = Romancista(nome='machado de assis')
+
+    session.add(db_romancista)
+    await session.commit()
+    await session.refresh(db_romancista)
+
+    return db_romancista
 
 
 class UserFactory(factory.Factory):

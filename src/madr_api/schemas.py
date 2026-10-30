@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
 class AccountCreate(BaseModel):
@@ -16,6 +16,13 @@ class AccountPublic(BaseModel):
 
 class RomancistaCreate(BaseModel):
     nome: str
+
+    @field_validator('nome')
+    @classmethod
+    def validar_nomes(cls, nome: str) -> str:
+        if not nome.strip():
+            raise ValueError('The name cannot be empty')
+        return nome
 
 
 class RomancistaPublic(BaseModel):
