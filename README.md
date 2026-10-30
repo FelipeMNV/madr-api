@@ -338,6 +338,4 @@ A ideia é transformar o acervo em uma plataforma visual de exploração literá
 
 **Felipe Vieira**
 
-Estudante de Engenharia de Software, com foco em desenvolvimento de software.
-
 [GitHub](https://github.com/FelipeMNV) · [LinkedIn](https://www.linkedin.com/in/felipe-vieira-578311242/)
