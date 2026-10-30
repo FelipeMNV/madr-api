@@ -208,3 +208,43 @@ def test_update_user_duplicate_username(client, user, token, other_user):
 
     assert response.status_code == HTTPStatus.CONFLICT
     assert response.json() == {'detail': 'Username or email already exists'}
+
+
+def test_delete_user(client, user, token):
+    response = client.delete(
+        f'/users/{user.id}', headers={'Authorization': f'Bearer {token}'}
+    )
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {'message': 'User deleted'}
+
+    login_response = client.post(
+        '/auth/token', data={'username': user.username, 'password': 'testtest'}
+    )
+
+    assert login_response.status_code == HTTPStatus.UNAUTHORIZED
+
+
+def test_delete_user_wrong_user(client, other_user, token):
+    response = client.delete(
+        f'/users/{other_user.id}', headers={'Authorization': f'Bearer {token}'}
+    )
+
+    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.json() == {'detail': 'Not enough permission'}
+
+
+def test_delete_user_without_token(client, user):
+    response = client.delete(f'/users/{user.id}')
+
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.json() == {'detail': 'Not authenticated'}
+
+
+def test_delete_user_wrong_token(client, user):
+    response = client.delete(
+        f'/users/{user.id}', headers={'Authorization': 'Bearer invalid_token'}
+    )
+
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.json() == {'detail': 'Could not validate credentials'}

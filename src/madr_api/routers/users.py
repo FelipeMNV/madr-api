@@ -100,3 +100,18 @@ async def update_user(
     await session.refresh(current_user)
 
     return current_user
+
+
+@router.delete('/{user_id}', status_code=HTTPStatus.OK)
+async def delete_user(
+    session: T_Session, current_user: CurrentUser, user_id: int
+):
+    if current_user.id != user_id:
+        raise HTTPException(
+            status_code=HTTPStatus.FORBIDDEN, detail='Not enough permission'
+        )
+
+    await session.delete(current_user)
+    await session.commit()
+
+    return {'message': 'User deleted'}
