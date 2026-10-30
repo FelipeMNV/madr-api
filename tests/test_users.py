@@ -106,3 +106,105 @@ def test_read_users_invalid_token(client):
     )
 
     assert response.status_code == HTTPStatus.UNAUTHORIZED
+
+
+def test_update_user(user, client, token):
+    response = client.put(
+        f'/users/{user.id}',
+        headers={'Authorization': f'Bearer {token}'},
+        json={
+            'username': 'bob',
+            'email': 'bob@example.com',
+            'password': 'newpassword',
+        },
+    )
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {
+        'username': 'bob',
+        'email': 'bob@example.com',
+        'id': user.id,
+    }
+
+    login_response = client.post(
+        '/auth/token',
+        data={'username': 'bob', 'password': 'newpassword'},
+    )
+
+    assert login_response.status_code == HTTPStatus.OK
+    assert user.password != 'newpassword'
+    assert verify_password_hash('newpassword', user.password)
+
+
+def test_update_user_wrong_user(client, other_user, token):
+    response = client.put(
+        f'/users/{other_user.id}',
+        headers={'Authorization': f'Bearer {token}'},
+        json={
+            'username': 'bob',
+            'email': 'bob@example.com',
+            'password': 'bobnewpassword',
+        },
+    )
+
+    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.json() == {'detail': 'Not enough permission'}
+
+
+def test_update_user_without_token(client, user):
+    response = client.put(
+        f'users/{user.id}',
+        json={
+            'username': 'bob',
+            'email': 'bob@example.com',
+            'password': 'bobpassword',
+        },
+    )
+
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.json() == {'detail': 'Not authenticated'}
+
+
+def test_update_user_invalid_token(client, user):
+    response = client.put(
+        f'users/{user.id}',
+        headers={'Authorization': 'Bearer invalido'},
+        json={
+            'username': 'bob',
+            'email': 'bob@example.com',
+            'password': 'bobpassword',
+        },
+    )
+
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.json() == {'detail': 'Could not validate credentials'}
+
+
+def test_update_user_duplicate_email(client, user, token, other_user):
+    response = client.put(
+        f'users/{user.id}',
+        headers={'Authorization': f'Bearer {token}'},
+        json={
+            'username': 'felipe',
+            'email': other_user.email,
+            'password': 'felipepassword',
+        },
+    )
+
+    assert response.status_code == HTTPStatus.CONFLICT
+    assert response.json() == {'detail': 'Username or email already exists'}
+
+
+def test_update_user_duplicate_username(client, user, token, other_user):
+    response = client.put(
+        f'users/{user.id}',
+        headers={'Authorization': f'Bearer {token}'},
+        json={
+            'username': other_user.username,
+            'email': 'felipe@example.com',
+            'password': 'felipepassword',
+        },
+    )
+
+    assert response.status_code == HTTPStatus.CONFLICT
+    assert response.json() == {'detail': 'Username or email already exists'}

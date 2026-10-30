@@ -66,3 +66,37 @@ async def read_users(
         select(User).limit(filter_users.limit).offset(filter_users.offset)
     )
     return {'users': users.all()}
+
+
+@router.put(
+    '/{user_id}', status_code=HTTPStatus.OK, response_model=AccountPublic
+)
+async def update_user(
+    user: AccountCreate,
+    user_id: int,
+    session: T_Session,
+    current_user: CurrentUser,
+):
+    if current_user.id != user_id:
+        raise HTTPException(
+            status_code=HTTPStatus.FORBIDDEN, detail='Not enough permission'
+        )
+
+    current_user.email = user.email
+    current_user.username = user.username
+    current_user.password = get_password_hash(user.password)
+
+    try:
+        session.add(current_user)
+        await session.commit()
+    except IntegrityError:
+        await session.rollback()
+
+        raise HTTPException(
+            detail='Username or email already exists',
+            status_code=HTTPStatus.CONFLICT,
+        )
+
+    await session.refresh(current_user)
+
+    return current_user
