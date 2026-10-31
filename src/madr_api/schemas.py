@@ -48,3 +48,7 @@ class FilterPage(BaseModel):
 
 class UserList(BaseModel):
     users: list[AccountPublic]
+
+
+class RomancistaList(BaseModel):
+    romancistas: list[RomancistaPublic]
