@@ -284,3 +284,55 @@ def test_update_romancista_persistence(client, romancista, token):
         'id': romancista.id,
         'nome': 'clarice lispector',
     }
+
+
+def test_delete_romancista(client, romancista, token):
+    response = client.delete(
+        f'/romancista/{romancista.id}',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == HTTPStatus.NO_CONTENT
+
+
+def test_delete_romancista_not_found(client, token):
+    response = client.delete(
+        '/romancista/99999',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'Romancista not found'}
+
+
+def test_delete_romancista_without_token(client, romancista):
+    response = client.delete(
+        '/romancista/{romancista.id}',
+    )
+
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.json() == {'detail': 'Not authenticated'}
+
+
+def test_delete_romancista_invalid_token(client, romancista):
+    response = client.delete(
+        '/romancista/{romancista.id}',
+        headers={'Authorization': 'Bearer invalid_token'},
+    )
+
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.json() == {'detail': 'Could not validate credentials'}
+
+
+def test_delete_romancista_persistence(client, romancista, token):
+    response = client.delete(
+        f'/romancista/{romancista.id}',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == HTTPStatus.NO_CONTENT
+
+    response_get = client.get(f'/romancista/{romancista.id}')
+
+    assert response_get.status_code == HTTPStatus.NOT_FOUND
+    assert response_get.json() == {'detail': 'Romancista not found'}

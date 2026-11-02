@@ -119,3 +119,33 @@ async def update_romancista(
         )
     await session.refresh(romancista_db)
     return romancista_db
+
+
+@router.delete(
+    '/{romancista_id}',
+    status_code=HTTPStatus.NO_CONTENT,
+)
+async def delete_romancista(
+    romancista_id: int,
+    session: T_Session,
+    current_user: CurrentUser,
+):
+    romancista_db = await session.scalar(
+        select(Romancista).where(Romancista.id == romancista_id)
+    )
+
+    if not romancista_db:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail='Romancista not found',
+        )
+
+    try:
+        await session.delete(romancista_db)
+        await session.commit()
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(
+            status_code=HTTPStatus.CONFLICT,
+            detail='Cannot delete romancista with associated books',
+        )
