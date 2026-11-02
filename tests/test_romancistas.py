@@ -175,3 +175,112 @@ def test_read_romancista_invalid_id(client):
     response = client.get('/romancista/abc')
 
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+def test_update_romancista(client, romancista, token):
+    response = client.put(
+        f'/romancista/{romancista.id}',
+        headers={'Authorization': f'Bearer {token}'},
+        json={'nome': 'clarice lispector'},
+    )
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {
+        'id': romancista.id,
+        'nome': 'clarice lispector',
+    }
+
+
+def test_update_romancista_not_found(client, token):
+    response = client.put(
+        '/romancista/99999',
+        headers={'Authorization': f'Bearer {token}'},
+        json={'nome': 'clarice lispector'},
+    )
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'Romancista not found'}
+
+
+@pytest.mark.asyncio
+async def test_update_romancista_duplicated(
+    client, token, romancista, session
+):
+
+    clarice = Romancista(nome='Clarice Lispector')
+
+    session.add(clarice)
+    await session.commit()
+    await session.refresh(clarice)
+
+    response = client.put(
+        f'/romancista/{clarice.id}',
+        headers={'Authorization': f'Bearer {token}'},
+        json={'nome': 'machado de assis'},
+    )
+
+    assert response.status_code == HTTPStatus.CONFLICT
+    assert response.json() == {'detail': 'Romancista already exists'}
+
+
+def test_update_romancista_without_token(romancista, client):
+    response = client.put(
+        f'/romancista/{romancista.id}',
+        json={'nome': 'clarice lispector'},
+    )
+
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.json() == {'detail': 'Not authenticated'}
+
+
+def test_update_romancista_invalid_token(romancista, client):
+    response = client.put(
+        f'/romancista/{romancista.id}',
+        headers={'Authorization': 'Bearer invalid_token'},
+        json={'nome': 'clarice lispector'},
+    )
+
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.json() == {'detail': 'Could not validate credentials'}
+
+
+def test_update_romancista_empty_name(client, romancista, token):
+    response = client.put(
+        f'/romancista/{romancista.id}',
+        headers={'Authorization': f'Bearer {token}'},
+        json={'nome': '   '},
+    )
+
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+def test_update_romancista_normalization(client, romancista, token):
+    response = client.put(
+        f'/romancista/{romancista.id}',
+        headers={'Authorization': f'Bearer {token}'},
+        json={'nome': '  CLARICE    LISPECTOR  '},
+    )
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {
+        'id': romancista.id,
+        'nome': 'clarice lispector',
+    }
+
+
+def test_update_romancista_persistence(client, romancista, token):
+    response = client.put(
+        f'/romancista/{romancista.id}',
+        headers={'Authorization': f'Bearer {token}'},
+        json={'nome': 'clarice lispector'},
+    )
+
+    assert response.status_code == HTTPStatus.OK
+
+    response_get = client.get(f'/romancista/{romancista.id}')
+
+    assert response_get.status_code == HTTPStatus.OK
+    assert response_get.json() == {
+        'id': romancista.id,
+        'nome': 'clarice lispector',
+    }

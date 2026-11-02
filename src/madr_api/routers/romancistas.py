@@ -85,3 +85,37 @@ async def read_romancista_id(
         )
 
     return romancista
+
+
+@router.put('/{romancista_id}', response_model=RomancistaPublic)
+async def update_romancista(
+    romancista_id: int,
+    session: T_Session,
+    romancista: RomancistaCreate,
+    current_user: CurrentUser,
+):
+    romancista_db = await session.scalar(
+        select(Romancista).where(Romancista.id == romancista_id)
+    )
+
+    if not romancista_db:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail='Romancista not found',
+        )
+
+    nome_normalizado = normalizar_nome(romancista.nome)
+
+    romancista_db.nome = nome_normalizado
+
+    try:
+        await session.commit()
+    except IntegrityError:
+        await session.rollback()
+
+        raise HTTPException(
+            status_code=HTTPStatus.CONFLICT,
+            detail='Romancista already exists',
+        )
+    await session.refresh(romancista_db)
+    return romancista_db
