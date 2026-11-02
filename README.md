@@ -1,8 +1,8 @@
 # 📚 MADR API
 
-API REST para gerenciamento de um acervo digital de romances, desenvolvida com **Python, FastAPI e PostgreSQL**.
+API REST para gerenciamento de um acervo digital de livros, desenvolvida com **Python, FastAPI e PostgreSQL**.
 
-O MADR permite gerenciar contas, autenticação e registros literários, incluindo livros e romancistas. O projeto utiliza SQLAlchemy assíncrono para persistência de dados, autenticação JWT e testes automatizados para validar as principais funcionalidades.
+O MADR permite gerenciar contas, autenticação e registros literários, incluindo livros e escritores. O projeto utiliza SQLAlchemy assíncrono para persistência de dados, autenticação JWT e testes automatizados para validar as principais funcionalidades.
 
 > 🚧 **Status:** Em desenvolvimento — backend em construção.
 
