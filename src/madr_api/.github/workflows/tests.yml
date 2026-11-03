@@ -1,0 +1,38 @@
+
+name: MADR API CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Run Ruff
+        run: poetry run task lint
+
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql+psycopg://madr:madr@localhost:5433/madr
+          SECRET_KEY: ci-test-secret-key-not-for-production
+          ALGORITHM: HS256
+          ACCESS_TOKEN_EXPIRE_MINUTES: '30'
+        run: poetry run pytest --cov=madr_api --cov-branch --cov-report=term-missing
