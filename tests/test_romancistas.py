@@ -431,3 +431,29 @@ def test_delete_romancista_without_books(client, token, romancista):
 
     assert response_busca.status_code == HTTPStatus.NOT_FOUND
     assert response_busca.json() == {'detail': 'Romancista not found'}
+
+
+def test_update_romancista_integrity_error(client, token, romancista, session):
+    with (
+        patch.object(session, 'commit', new_callable=AsyncMock) as mock_commit,
+        patch.object(
+            session, 'rollback', new_callable=AsyncMock
+        ) as mock_rollback,
+    ):
+        mock_commit.side_effect = IntegrityError(
+            'UPDATE romancistas',
+            {},
+            Exception('Unique constraint violation'),
+        )
+
+        response = client.put(
+            f'/romancista/{romancista.id}',
+            headers={'Authorization': f'Bearer {token}'},
+            json={'nome': 'Machado de Assis Atualizado'},
+        )
+
+    assert response.status_code == HTTPStatus.CONFLICT
+    assert response.json() == {'detail': 'Romancista already exists'}
+
+    mock_commit.assert_awaited_once()
+    mock_rollback.assert_awaited_once()
