@@ -81,3 +81,22 @@ def test_create_livro_empty_title(romancista, client, token):
 
     assert errors[0]['loc'] == ['body', 'titulo']
     assert 'The title cannot be empty' in errors[0]['msg']
+
+
+def test_create_livro_invalid_year(client, token, romancista):
+    response = client.post(
+        '/livros/',
+        headers={'Authorization': f'Bearer {token}'},
+        json={
+            'titulo': 'Dom Casmurro',
+            'ano': -1899,
+            'romancista_id': romancista.id,
+        },
+    )
+
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+    errors = response.json()['detail']
+
+    assert errors[0]['loc'] == ['body', 'ano']
+    assert errors[0]['type'] == 'greater_than_equal'
