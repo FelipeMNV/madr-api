@@ -314,8 +314,8 @@ Os testes de integração precisam de um ambiente Docker funcional para iniciar 
 | 03 | Cadastro e autenticação de usuários | ✅ Concluído |
 | 04 | Atualização, exclusão e renovação JWT | ✅ Concluído |
 | 05 | Cadastro de romancistas | ✅ Concluído |
-| 06 | CRUD completo de romancistas | 🔄 Em desenvolvimento |
-| 07 | CRUD de livros e relacionamentos | ⏳ Planejado |
+| 06 | CRUD completo de romancistas | ✅ Concluído |
+| 07 | CRUD de livros e relacionamentos | 🔄 Em desenvolvimento |
 | 08 | Filtros, paginação e revisão da API | ⏳ Planejado |
 | 09 | Documentação e finalização | ⏳ Planejado |
 | 10 | Interface web integrada à API | 💡 Evolução futura |
