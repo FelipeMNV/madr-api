@@ -176,6 +176,8 @@ Um romancista pode possuir várias obras cadastradas, enquanto cada livro está 
 - Exclusão da própria conta.
 - Renovação de access tokens.
 - Proteção de endpoints e validação de permissões.
+- Listagem e busca de romancistas.
+- Atualização e exclusão de romancistas.
 
 **Romancistas**
 - Cadastro de romancistas.
@@ -191,8 +193,6 @@ Um romancista pode possuir várias obras cadastradas, enquanto cada livro está 
 
 ### Em desenvolvimento
 
-- Listagem e busca de romancistas.
-- Atualização e exclusão de romancistas.
 - CRUD de livros.
 - Filtros e paginação do acervo.
 - Integração completa dos relacionamentos nos endpoints.
