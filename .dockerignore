@@ -1,0 +1,38 @@
+# Ambiente virtual e Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Variáveis de ambiente e segredos
+.env
+.env.*
+!.env.example
+
+# Git e GitHub
+.git/
+.github/
+
+# Testes e cobertura
+tests/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.ruff_cache/
+
+# IDE e sistema operacional
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Arquivos temporários
+*.log
+*.tmp
+
+# Docker e documentação local
+compose.yaml
+compose.yml
