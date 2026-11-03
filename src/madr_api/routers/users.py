@@ -29,10 +29,10 @@ async def create_user(user: AccountCreate, session: T_Session):
                 detail='Username already exists',
                 status_code=HTTPStatus.CONFLICT,
             )
-        elif db_user.email == user.email:
-            raise HTTPException(
-                detail='Email already exists', status_code=HTTPStatus.CONFLICT
-            )
+        raise HTTPException(
+            detail='Email already exists',
+            status_code=HTTPStatus.CONFLICT,
+        )
 
     db_user = User(
         username=user.username,

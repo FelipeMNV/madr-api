@@ -481,3 +481,22 @@ def test_delete_livro_persistence(client, token, livro):
 
     assert response_get.status_code == HTTPStatus.NOT_FOUND
     assert response_get.json() == {'detail': 'Livro not found'}
+
+
+def test_read_livros_title_only_spaces(client, livro):
+    response = client.get(
+        '/livros/',
+        params={'titulo': '   '},
+    )
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {
+        'livros': [
+            {
+                'id': livro.id,
+                'titulo': livro.titulo,
+                'ano': livro.ano,
+                'romancista_id': livro.romancista_id,
+            }
+        ]
+    }
