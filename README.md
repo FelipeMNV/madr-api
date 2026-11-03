@@ -4,7 +4,9 @@ API REST para gerenciamento de um acervo digital de livros, desenvolvida com **P
 
 O MADR permite gerenciar contas, autenticação e registros literários, incluindo livros e escritores. O projeto utiliza SQLAlchemy assíncrono para persistência de dados, autenticação JWT e testes automatizados para validar as principais funcionalidades.
 
-> 🚧 **Status:** Em desenvolvimento — backend em construção.
+> ✅ **Status:** Backend concluído — API REST com CRUD, autenticação, testes e documentação.
+>
+> O MADR Web (interface frontend) será desenvolvido como uma evolução independente do backend.
 
 ---
 
@@ -16,6 +18,7 @@ O MADR permite gerenciar contas, autenticação e registros literários, incluin
 - [Decisões Técnicas](#-decisões-técnicas)
 - [Modelo de Dados](#-modelo-de-dados)
 - [Funcionalidades](#-funcionalidades)
+- [Principais Endpoints](#-principais-endpoints)
 - [Como Executar](#-como-executar)
 - [Testes e Qualidade](#-testes-e-qualidade)
 - [Roadmap](#-roadmap)
@@ -35,7 +38,7 @@ A aplicação foi estruturada para trabalhar com três entidades principais:
 
 A API utiliza comunicação HTTP com respostas em JSON e disponibiliza documentação interativa por meio do Swagger UI.
 
-O desenvolvimento é realizado de forma incremental, com implementação e testes das funcionalidades a cada etapa.
+O backend foi desenvolvido de forma incremental, com implementação, revisão e testes automatizados de cada funcionalidade.
 
 ---
 
@@ -75,18 +78,21 @@ madr-api/
 │       ├── routers/
 │       │   ├── auth.py         # Login e renovação de tokens
 │       │   ├── users.py        # Gerenciamento de contas
-│       │   └── romancistas.py  # Cadastro de romancistas
+│       │   ├── romancistas.py  # CRUD de romancistas
+│       │   └── livros.py       # CRUD de livros e filtros
 │       ├── app.py              # Inicialização do FastAPI
 │       ├── database.py         # Engine e sessões assíncronas
 │       ├── models.py           # Modelos SQLAlchemy
 │       ├── schemas.py          # Schemas Pydantic
 │       ├── security.py         # JWT, senhas e autenticação
-│       └── settings.py         # Configurações da aplicação
+│       ├── settings.py         # Configurações da aplicação
+│       └── utils.py            # Normalização de textos
 ├── tests/
 │   ├── conftest.py             # Fixtures compartilhadas
 │   ├── test_auth.py
 │   ├── test_users.py
-│   └── test_romancistas.py
+│   ├── test_romancistas.py
+│   └── test_livro.py
 ├── alembic.ini
 ├── compose.yaml
 ├── pyproject.toml
@@ -136,13 +142,15 @@ O sistema utiliza códigos HTTP apropriados, incluindo:
 | `409 Conflict` | Conflito com registro existente |
 | `422 Unprocessable Entity` | Dados inválidos |
 
-No cadastro de romancistas, os nomes são normalizados para remover espaços excedentes e padronizar letras minúsculas. Nomes vazios são rejeitados por validação.
+No cadastro de romancistas, a normalização remove espaços excedentes **sem alterar a capitalização original**. Um índice único sobre `lower(nome)` impede duplicatas que diferem apenas por maiúsculas e minúsculas. Nomes vazios são rejeitados por validação.
+
+A chave estrangeira `Livro.romancista_id` utiliza `ON DELETE RESTRICT`, com `passive_deletes` configurado no relacionamento SQLAlchemy. Isso impede a exclusão de romancistas que ainda possuem livros, preservando os registros e retornando `409 Conflict`.
 
 ### Testes automatizados
 
 Os testes verificam tanto as respostas HTTP quanto os comportamentos da aplicação.
 
-O ambiente de testes utiliza Pytest, fixtures reutilizáveis e PostgreSQL em containers, permitindo verificar operações reais de persistência.
+O ambiente de testes utiliza Pytest, fixtures reutilizáveis e PostgreSQL em containers, permitindo verificar operações reais de persistência, autenticação e integridade referencial. A suíte atingiu **100% de cobertura de código** na revisão final da MADR-24.
 
 O Freezegun é utilizado para simular a passagem do tempo e testar tokens expirados sem precisar aguardar sua expiração real.
 
@@ -185,17 +193,53 @@ Um romancista pode possuir várias obras cadastradas, enquanto cada livro está 
 - Listagem e busca de romancistas.
 - Atualização e exclusão de romancistas.
 
-**Infraestrutura**
+**Livros**
+- Cadastro, listagem, consulta por ID, atualização e exclusão de livros.
+- Filtro parcial por título, sem diferenciação entre maiúsculas e minúsculas.
+- Filtro por romancista, combinável com o filtro por título.
+- Paginação por `limit` e `offset`.
+- Verificação da existência do romancista ao cadastrar ou atualizar um livro.
+- Integridade referencial entre livros e romancistas.
+
+**Infraestrutura e qualidade**
 - PostgreSQL com Docker Compose.
 - Migrações utilizando Alembic.
-- Testes automatizados e análise de cobertura.
+- Testes automatizados, incluindo persistência e fluxos de erro.
+- Cobertura de código de 100% na revisão da MADR-24.
 - Lint e formatação com Ruff.
+- Documentação automática OpenAPI/Swagger UI.
+- Automação de verificações por GitHub Actions (CI).
 
-### Em desenvolvimento
+---
 
-- CRUD de livros.
-- Filtros e paginação do acervo.
-- Integração completa dos relacionamentos nos endpoints.
+## 🔌 Principais Endpoints
+
+| Método | Endpoint | Finalidade |
+|---|---|---|
+| `POST` | `/users/` | Cadastrar usuário |
+| `GET` | `/users/` | Listar usuários |
+| `PUT` | `/users/{user_id}` | Atualizar conta |
+| `DELETE` | `/users/{user_id}` | Excluir conta |
+| `POST` | `/auth/token` | Autenticar e receber JWT |
+| `POST` | `/auth/refresh_token` | Renovar access token |
+| `POST` | `/romancista/` | Cadastrar romancista |
+| `GET` | `/romancista/` | Listar e pesquisar romancistas |
+| `GET` | `/romancista/{romancista_id}` | Buscar romancista por ID |
+| `PUT` | `/romancista/{romancista_id}` | Atualizar romancista |
+| `DELETE` | `/romancista/{romancista_id}` | Excluir romancista |
+| `POST` | `/livros/` | Cadastrar livro |
+| `GET` | `/livros/` | Listar, filtrar e paginar livros |
+| `GET` | `/livros/{livro_id}` | Buscar livro por ID |
+| `PUT` | `/livros/{livro_id}` | Atualizar livro |
+| `DELETE` | `/livros/{livro_id}` | Excluir livro |
+
+As rotas de escrita são protegidas por JWT, com exceção do cadastro de usuários. A documentação interativa apresenta os detalhes de cada schema e parâmetro.
+
+Exemplo de consulta combinando filtros e paginação:
+
+```http
+GET /livros/?titulo=dom&romancista_id=1&limit=10&offset=0
+```
 
 ---
 
@@ -281,6 +325,12 @@ poetry run task test
 
 A tarefa executa as verificações de lint, roda os testes automatizados e gera o relatório HTML de cobertura.
 
+Para verificar cobertura de linhas e branches, também é possível executar:
+
+```bash
+poetry run pytest --cov=madr_api --cov-branch --cov-report=term-missing --cov-report=html
+```
+
 ### Executar somente o lint
 
 ```bash
@@ -315,10 +365,11 @@ Os testes de integração precisam de um ambiente Docker funcional para iniciar 
 | 04 | Atualização, exclusão e renovação JWT | ✅ Concluído |
 | 05 | Cadastro de romancistas | ✅ Concluído |
 | 06 | CRUD completo de romancistas | ✅ Concluído |
-| 07 | CRUD de livros e relacionamentos | 🔄 Em desenvolvimento |
-| 08 | Filtros, paginação e revisão da API | ⏳ Planejado |
-| 09 | Documentação e finalização | ⏳ Planejado |
-| 10 | Interface web integrada à API | 💡 Evolução futura |
+| 07 | CRUD de livros e relacionamentos | ✅ Concluído |
+| 08 | Filtros, paginação e revisão da API | ✅ Concluído |
+| 09 | Documentação, CI/CD e finalização do backend | ✅ Concluído |
+
+**Próxima evolução:** desenvolver uma interface web com React e TypeScript integrada à API.
 
 ---
 
@@ -326,9 +377,9 @@ Os testes de integração precisam de um ambiente Docker funcional para iniciar 
 
 O MADR utiliza como ponto de partida o desafio final do curso [FastAPI do Zero](https://fastapidozero.dunossauro.com/), do Dunossauro.
 
-O projeto está sendo desenvolvido com foco na aplicação prática de conceitos de desenvolvimento backend, persistência relacional, autenticação e testes automatizados.
+O projeto foi desenvolvido com foco na aplicação prática de conceitos de desenvolvimento backend, persistência relacional, autenticação e testes automatizados.
 
-Após a conclusão da API, a proposta é evoluir o MADR para uma aplicação Full Stack com interface própria, utilizando React e TypeScript.
+Com o backend concluído, a proposta é evoluir o MADR para uma aplicação Full Stack com interface própria, utilizando React e TypeScript.
 
 A ideia é transformar o acervo em uma plataforma visual de exploração literária, permitindo navegar por obras, conhecer seus romancistas e gerenciar os registros por meio de uma interface web.
 
