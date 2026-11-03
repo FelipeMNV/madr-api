@@ -176,14 +176,14 @@ Um romancista pode possuir várias obras cadastradas, enquanto cada livro está 
 - Exclusão da própria conta.
 - Renovação de access tokens.
 - Proteção de endpoints e validação de permissões.
-- Listagem e busca de romancistas.
-- Atualização e exclusão de romancistas.
 
 **Romancistas**
 - Cadastro de romancistas.
 - Normalização de nomes.
 - Validação de campos obrigatórios.
 - Tratamento de nomes duplicados.
+- Listagem e busca de romancistas.
+- Atualização e exclusão de romancistas.
 
 **Infraestrutura**
 - PostgreSQL com Docker Compose.
