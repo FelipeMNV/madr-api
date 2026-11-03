@@ -13,7 +13,7 @@ from testcontainers.postgres import PostgresContainer
 
 from madr_api.app import app
 from madr_api.database import get_session
-from madr_api.models import Romancista, User, table_registry
+from madr_api.models import Livro, Romancista, User, table_registry
 from madr_api.security import get_password_hash
 
 if sys.platform == 'win32':
@@ -99,6 +99,19 @@ async def romancista(session: AsyncSession):
     await session.refresh(db_romancista)
 
     return db_romancista
+
+
+@pytest_asyncio.fixture
+async def livro(session: AsyncSession, romancista: Romancista):
+    db_livro = Livro(
+        titulo='Dom Casmurro', ano=1899, romancista_id=romancista.id
+    )
+
+    session.add(db_livro)
+    await session.commit()
+    await session.refresh(db_livro)
+
+    return db_livro
 
 
 class UserFactory(factory.Factory):

@@ -33,7 +33,19 @@ class RomancistaPublic(BaseModel):
 class LivroCreate(BaseModel):
     titulo: str
     ano: int = Field(ge=1)
-    romancista_id: int
+    romancista_id: int = Field(gt=0)
+
+    @field_validator('titulo')
+    @classmethod
+    def validar_titulo(cls, titulo: str) -> str:
+        if not titulo.strip():
+            raise ValueError('The title cannot be empty')
+
+        return titulo
+
+
+class LivroPublic(LivroCreate):
+    id: int
 
 
 class Token(BaseModel):
