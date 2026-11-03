@@ -1,6 +1,8 @@
 from http import HTTPStatus
+from unittest.mock import AsyncMock, patch
 
 import pytest
+from sqlalchemy.exc import IntegrityError
 
 from madr_api.models import Romancista
 
@@ -48,6 +50,50 @@ def test_create_romancista_invalid_token(client):
     assert response.json() == {'detail': 'Could not validate credentials'}
 
 
+@pytest.mark.asyncio
+async def test_romancista_case_insensitive_unique(session, romancista):
+    duplicado = Romancista(nome='MACHADO DE ASSIS')
+
+    session.add(duplicado)
+
+    with pytest.raises(IntegrityError):
+        await session.commit()
+
+    await session.rollback()
+
+
+def test_create_romancista_integrity_error(client, token):
+    with (
+        patch(
+            'sqlalchemy.ext.asyncio.AsyncSession.commit',
+            new_callable=AsyncMock,
+        ) as mock_commit,
+        patch(
+            'sqlalchemy.ext.asyncio.AsyncSession.rollback',
+            new_callable=AsyncMock,
+        ) as mock_rollback,
+    ):
+        mock_commit.side_effect = IntegrityError(
+            'INSERT INTO romancistas',
+            {},
+            Exception('Unique constraint violation'),
+        )
+
+        response = client.post(
+            '/romancista/',
+            headers={'Authorization': f'Bearer {token}'},
+            json={'nome': 'Machado de Assis'},
+        )
+
+    assert response.status_code == HTTPStatus.CONFLICT
+    assert response.json() == {
+        'detail': 'Romancista already exists',
+    }
+
+    mock_commit.assert_awaited_once()
+    mock_rollback.assert_awaited_once()
+
+
 def test_create_romancista_normalization(client, token):
     response = client.post(
         '/romancista/',
@@ -56,7 +102,7 @@ def test_create_romancista_normalization(client, token):
     )
 
     assert response.status_code == HTTPStatus.CREATED
-    assert response.json()['nome'] == 'machado de assis'
+    assert response.json()['nome'] == 'MACHADO DE ASSIS'
 
 
 def test_create_romancista_empty_name(client, token):
@@ -264,7 +310,7 @@ def test_update_romancista_normalization(client, romancista, token):
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {
         'id': romancista.id,
-        'nome': 'clarice lispector',
+        'nome': 'CLARICE LISPECTOR',
     }
 
 

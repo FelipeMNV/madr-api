@@ -1,2 +1,2 @@
-def normalizar_nome(nome: str) -> str:
-    return ' '.join(nome.split()).lower()
+def normalizar_texto(texto: str) -> str:
+    return ' '.join(texto.split())

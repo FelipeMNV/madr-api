@@ -1,13 +1,14 @@
 from http import HTTPStatus
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from madr_api.models import Livro, Romancista, User
-from madr_api.schemas import LivroCreate, LivroPublic
+from madr_api.schemas import FilterPage, LivroCreate, LivroList, LivroPublic
 from madr_api.security import get_current_user, get_session
+from madr_api.utils import normalizar_texto
 
 router = APIRouter(prefix='/livros', tags=['livros'])
 T_Session = Annotated[AsyncSession, Depends(get_session)]
@@ -35,3 +36,46 @@ async def create_livro(
     await session.refresh(db_livro)
 
     return db_livro
+
+
+@router.get('/', status_code=HTTPStatus.OK, response_model=LivroList)
+async def read_livros(
+    session: T_Session,
+    filter_page: Annotated[FilterPage, Query()],
+    titulo: str | None = None,
+    romancista_id: int | None = None,
+):
+    query = select(Livro)
+    if romancista_id is not None:
+        query = query.where(Livro.romancista_id == romancista_id)
+
+    if titulo:
+        titulo_filtro = normalizar_texto(titulo)
+
+        if titulo_filtro:
+            query = query.where(Livro.titulo.ilike(f'%{titulo_filtro}%'))
+
+    query = (
+        query
+        .order_by(Livro.id)
+        .limit(filter_page.limit)
+        .offset(filter_page.offset)
+    )
+    livros = await session.scalars(query)
+
+    return {'livros': livros.all()}
+
+
+@router.get('/{livro_id}', response_model=LivroPublic)
+async def read_livro_id(
+    session: T_Session,
+    livro_id: int,
+):
+    livro = await session.scalar(select(Livro).where(Livro.id == livro_id))
+    if not livro:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail='Livro not found',
+        )
+
+    return livro

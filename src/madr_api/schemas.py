@@ -48,6 +48,10 @@ class LivroPublic(LivroCreate):
     id: int
 
 
+class LivroList(BaseModel):
+    livros: list[LivroPublic]
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str

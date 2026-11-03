@@ -2,7 +2,7 @@ from http import HTTPStatus
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,7 +14,7 @@ from madr_api.schemas import (
     RomancistaPublic,
 )
 from madr_api.security import get_current_user, get_session
-from madr_api.utils import normalizar_nome
+from madr_api.utils import normalizar_texto
 
 router = APIRouter(prefix='/romancista', tags=['romancistas'])
 T_Session = Annotated[AsyncSession, Depends(get_session)]
@@ -27,7 +27,18 @@ CurrentUser = Annotated[User, Depends(get_current_user)]
 async def create_romancista(
     romancista: RomancistaCreate, session: T_Session, current_user: CurrentUser
 ):
-    nome_normalizado = normalizar_nome(romancista.nome)
+    nome_normalizado = normalizar_texto(romancista.nome)
+
+    romancista_existente = await session.scalar(
+        select(Romancista).where(
+            func.lower(Romancista.nome) == nome_normalizado.lower()
+        )
+    )
+
+    if romancista_existente:
+        raise HTTPException(
+            status_code=HTTPStatus.CONFLICT, detail='Romancista already exists'
+        )
 
     db_romancista = Romancista(nome=nome_normalizado)
 
@@ -36,7 +47,6 @@ async def create_romancista(
         await session.commit()
     except IntegrityError:
         await session.rollback()
-
         raise HTTPException(
             status_code=HTTPStatus.CONFLICT,
             detail='Romancista already exists',
@@ -54,7 +64,7 @@ async def read_romancistas(
 ):
     query = select(Romancista)
     if nome:
-        nome_normalizado = normalizar_nome(nome)
+        nome_normalizado = normalizar_texto(nome)
 
         query = query.where(Romancista.nome.ilike(f'%{nome_normalizado}%'))
 
@@ -104,7 +114,19 @@ async def update_romancista(
             detail='Romancista not found',
         )
 
-    nome_normalizado = normalizar_nome(romancista.nome)
+    nome_normalizado = normalizar_texto(romancista.nome)
+
+    romancista_existente = await session.scalar(
+        select(Romancista).where(
+            func.lower(Romancista.nome) == nome_normalizado.lower(),
+            Romancista.id != romancista_id,
+        )
+    )
+    if romancista_existente:
+        raise HTTPException(
+            status_code=HTTPStatus.CONFLICT,
+            detail='Romancista already exists',
+        )
 
     romancista_db.nome = nome_normalizado
 

@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import ForeignKey, Index, String, func
 from sqlalchemy.orm import Mapped, mapped_column, registry, relationship
 
 table_registry = registry()
@@ -24,6 +24,13 @@ class Romancista:
     livros: Mapped[list['Livro']] = relationship(
         back_populates='romancista',
         init=False,
+    )
+    __table_args__ = (
+        Index(
+            'uq_romancistas_nome_lower',
+            func.lower(nome),
+            unique=True,
+        ),
     )
 
 
