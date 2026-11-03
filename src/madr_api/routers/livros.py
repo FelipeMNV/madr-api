@@ -79,3 +79,56 @@ async def read_livro_id(
         )
 
     return livro
+
+
+@router.put('/{livro_id}', response_model=LivroPublic)
+async def update_livro(
+    livro_id: int,
+    session: T_Session,
+    current_user: CurrentUser,
+    livro: LivroCreate,
+):
+
+    livro_db = await session.scalar(select(Livro).where(Livro.id == livro_id))
+
+    if not livro_db:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail='Livro not found'
+        )
+
+    romancista_db = await session.scalar(
+        select(Romancista).where(Romancista.id == livro.romancista_id)
+    )
+
+    if not romancista_db:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail='Romancista not found',
+        )
+
+    livro_db.titulo = normalizar_texto(livro.titulo)
+    livro_db.ano = livro.ano
+    livro_db.romancista_id = livro.romancista_id
+
+    await session.commit()
+    await session.refresh(livro_db)
+
+    return livro_db
+
+
+@router.delete(
+    '/{livro_id}',
+    status_code=HTTPStatus.NO_CONTENT,
+)
+async def delete_livro(
+    livro_id: int, session: T_Session, current_user: CurrentUser
+):
+    livro_db = await session.scalar(select(Livro).where(Livro.id == livro_id))
+
+    if not livro_db:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail='Livro not found'
+        )
+
+    await session.delete(livro_db)
+    await session.commit()
