@@ -23,6 +23,7 @@ class Romancista:
 
     livros: Mapped[list['Livro']] = relationship(
         back_populates='romancista',
+        passive_deletes='all',
         init=False,
     )
     __table_args__ = (
@@ -40,7 +41,9 @@ class Livro:
     id: Mapped[int] = mapped_column(init=False, primary_key=True)
     titulo: Mapped[str] = mapped_column(String(300), nullable=False)
     ano: Mapped[int] = mapped_column(nullable=False)
-    romancista_id: Mapped[int] = mapped_column(ForeignKey('romancistas.id'))
+    romancista_id: Mapped[int] = mapped_column(
+        ForeignKey('romancistas.id', ondelete='RESTRICT')
+    )
 
     romancista: Mapped['Romancista'] = relationship(
         back_populates='livros',

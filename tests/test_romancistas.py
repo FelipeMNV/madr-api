@@ -382,3 +382,52 @@ def test_delete_romancista_persistence(client, romancista, token):
 
     assert response_get.status_code == HTTPStatus.NOT_FOUND
     assert response_get.json() == {'detail': 'Romancista not found'}
+
+
+def test_delete_romancista_with_books(client, token, livro, romancista):
+    response = client.delete(
+        f'/romancista/{romancista.id}',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == HTTPStatus.CONFLICT
+    assert response.json() == {
+        'detail': 'Cannot delete romancista with associated books'
+    }
+
+
+def test_delete_romancista_with_books_persistence(
+    client, token, livro, romancista
+):
+    romancista_id = romancista.id
+    livro_id = livro.id
+
+    response = client.delete(
+        f'/romancista/{romancista_id}',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == HTTPStatus.CONFLICT
+
+    response_romancista = client.get(f'/romancista/{romancista_id}')
+
+    assert response_romancista.status_code == HTTPStatus.OK
+
+    response_livro = client.get(f'/livros/{livro_id}')
+
+    assert response_livro.status_code == HTTPStatus.OK
+    assert response_livro.json()['romancista_id'] == romancista_id
+
+
+def test_delete_romancista_without_books(client, token, romancista):
+    response = client.delete(
+        f'/romancista/{romancista.id}',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == HTTPStatus.NO_CONTENT
+
+    response_busca = client.get(f'/romancista/{romancista.id}')
+
+    assert response_busca.status_code == HTTPStatus.NOT_FOUND
+    assert response_busca.json() == {'detail': 'Romancista not found'}
