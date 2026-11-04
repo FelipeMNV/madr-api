@@ -8,6 +8,18 @@ O MADR permite gerenciar contas, autenticação e registros literários, incluin
 >
 > O MADR Web (interface frontend) será desenvolvido como uma evolução independente do backend.
 
+## API em produção
+
+A MADR API está disponível publicamente, com deploy realizado no Render e banco de dados PostgreSQL hospedado no Neon.
+
+- **API:** https://madr-api.onrender.com
+- **Documentação interativa (Swagger):** https://madr-api.onrender.com/docs
+- **Especificação OpenAPI:** https://madr-api.onrender.com/openapi.json
+
+A aplicação é executada em um container Docker, utiliza Alembic para gerenciar as migrations do banco de dados e possui integração contínua com GitHub Actions.
+
+**Observação:** por utilizar o plano gratuito do Render, a API pode levar algum tempo para responder à primeira requisição após um período de inatividade.
+
 ---
 
 ## 📋 Índice
